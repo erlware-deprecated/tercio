@@ -1,3 +1,4 @@
+%%%----------------------------------------------------------------------------
 %%% Copyright (c) 2005-2006, A2Z Development USA, Inc.  All Rights Reserved.
 %%%
 %%% The contents of this file are subject to the Erlang Public License,
@@ -13,13 +14,16 @@
 %%% 
 %%% The Initial Developer of the Original Code is A2Z Development USA, Inc.
 %%% All Rights Reserved.
-
+%%%----------------------------------------------------------------------------
 -module(json).
+
 -export([encode/1, decode_string/1, decode/2]).
 -export([is_obj/1, obj_new/0, obj_fetch/2, obj_find/2, obj_is_key/2]).
 -export([obj_store/3, obj_from_list/1, obj_fold/3]).
 -export([test/0]).
--author("Jim Larson <jalarson@amazon.com>, Robert Wai-Chi Chu <robchu@amazon.com>").
+
+-author("Jim Larson <jalarson@amazon.com>").
+-author("Robert Wai-Chi Chu <robchu@amazon.com>").
 -vsn("1").
 
 %%% JavaScript Object Notation ("JSON", http://www.json.org) is a simple
