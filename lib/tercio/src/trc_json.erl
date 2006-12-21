@@ -10,14 +10,7 @@
 
 -include("eunit.hrl").
 
--compile(export_all).
-
 -export([decode/1, encode/1]).
-
--define(LOC_1, 1).
--define(LOC_2, 16).
--define(LOC_3, 256).
--define(LOC_4, 4096).
 
 %%--------------------------------------------------------------------
 %% @spec decode(Stream) -> {ParsedJson, UnparsedRemainder}
@@ -119,29 +112,29 @@ encode_object([], TAcc) ->
 
 
 value([$\" | T]) ->
-    string_body(T, []);
+    trc_parse_utils:stringish_body($\", T, []);
 value([$- | T]) ->
-    digit19(T, [$-]);
+    trc_parse_utils:digit19(T, [$-]);
 value([$0 | T]) ->
-    digit(T, [$0], front); 
+    trc_parse_utils:digit(T, [$0], front); 
 value([$1 | T]) ->
-    digit(T, [$1], front);
+    trc_parse_utils:digit(T, [$1], front);
 value([$2 | T]) ->
-    digit(T, [$2], front);
+    trc_parse_utils:digit(T, [$2], front);
 value([$3 | T]) ->
-    digit(T, [$3], front);
+    trc_parse_utils:digit(T, [$3], front);
 value([$4 | T]) ->
-    digit(T, [$4], front);
+    trc_parse_utils:digit(T, [$4], front);
 value([$5 | T]) ->
-    digit(T, [$5], front);
+    trc_parse_utils:digit(T, [$5], front);
 value([$6 | T]) ->
-    digit(T, [$6], front);
+    trc_parse_utils:digit(T, [$6], front);
 value([$7 | T]) ->
-    digit(T, [$7], front);
+    trc_parse_utils:digit(T, [$7], front);
 value([$8 | T]) ->
-    digit(T, [$8], front);
+    trc_parse_utils:digit(T, [$8], front);
 value([$9 | T]) ->
-    digit(T, [$9], front);
+    trc_parse_utils:digit(T, [$9], front);
 value([$[ | T]) ->
     array_body(T, []);
 value([${ | T]) ->
@@ -210,7 +203,7 @@ find(Delim, [$\n | T]) ->
     find(Delim, T).
 
 key([$\" | T]) ->
-    string_body(T, []);
+    trc_parse_utils:stringish_body($\", T, []);
 key([$\s | T]) ->
     key(T);
 key([$\t | T]) ->
@@ -245,182 +238,6 @@ ident([], Acc) ->
 ident(Else, Acc) when length(Acc) > 0->
     {lists:reverse(Acc), Else}.
 
-string_body([$\\, $\" | T], Acc) ->
-    string_body(T, [$\" | Acc]);
-string_body([$\\, $/ | T], Acc) ->
-    string_body(T, [$/ | Acc]);
-string_body([$\\, $\\ | T], Acc) ->
-    string_body(T, [$\\ | Acc]);
-string_body([$\\, $b | T], Acc) ->
-    string_body(T, [$\b | Acc]);
-string_body([$\\, $f | T], Acc) ->
-    string_body(T, [$\f | Acc]);
-string_body([$\\, $n | T], Acc) ->
-    string_body(T, [$\n | Acc]);
-string_body([$\\, $r | T], Acc) ->
-    string_body(T, [$\r | Acc]);
-string_body([$\\, $t | T], Acc) ->
-    string_body(T, [$\t | Acc]);
-string_body([$\\, $u | T], Acc) ->
-    parse_hex_digit(T, Acc, []);
-string_body([$\" | T], Acc) ->
-    {lists:reverse(Acc), T};
-string_body([H | T], Acc) ->
-    string_body(T, [H | Acc]).
-
-
-parse_hex_digit([$0 | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$0 | HexAcc]);
-parse_hex_digit([$1 | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$1 | HexAcc]);
-parse_hex_digit([$2 | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$2 | HexAcc]);
-parse_hex_digit([$3 | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$3 | HexAcc]);
-parse_hex_digit([$4 | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$4 | HexAcc]);
-parse_hex_digit([$5 | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$5 | HexAcc]);
-parse_hex_digit([$6 | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$6 | HexAcc]);
-parse_hex_digit([$7 | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$7 | HexAcc]);
-parse_hex_digit([$8 | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$8 | HexAcc]);
-parse_hex_digit([$9 | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$9 | HexAcc]);
-parse_hex_digit([$A | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$A | HexAcc]);
-parse_hex_digit([$a | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$A | HexAcc]);
-parse_hex_digit([$B | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$B | HexAcc]);
-parse_hex_digit([$b | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$B | HexAcc]);
-parse_hex_digit([$C | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$C | HexAcc]);
-parse_hex_digit([$c | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$C | HexAcc]);
-parse_hex_digit([$D | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$D | HexAcc]);
-parse_hex_digit([$d | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$D | HexAcc]);
-parse_hex_digit([$E | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$E | HexAcc]);
-parse_hex_digit([$e | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$E | HexAcc]);
-parse_hex_digit([$F | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$F | HexAcc]);
-parse_hex_digit([$f | T], Acc, HexAcc) when length(HexAcc) < 4 ->
-    parse_hex_digit(T, Acc, [$F | HexAcc]);
-parse_hex_digit(Stream, Acc, HexAcc) when length(HexAcc) == 4 ->
-    [D1, D2, D3, D4] = HexAcc,
-    Char = ((c2n(D1) * ?LOC_1) + 
-            (c2n(D2) * ?LOC_2) +
-            (c2n(D3) * ?LOC_3) +
-            (c2n(D4) * ?LOC_4)),
-    string_body(Stream, [Char | Acc]).
-
-
-c2n(Char) when Char < 58 ->
-    Char - 48;
-c2n(Char) ->
-    Char - 54.
-
-%%--------------------------------------------------------------------
-%% @spec digit19(Stream, Acc) -> Acc2.
-%% 
-%% @doc 
-%%  Parse from the stream ensuring that the digits has a length of 
-%%  between 1 and 9.
-%% @end
-%%--------------------------------------------------------------------
-digit19([$1 | T], Acc) ->
-    digit(T, [$1 | Acc], front);
-digit19([$2 | T], Acc) ->
-    digit(T, [$2 | Acc], front);
-digit19([$3 | T], Acc) ->
-    digit(T, [$3 | Acc], front);
-digit19([$4 | T], Acc) ->
-    digit(T, [$4 | Acc], front);
-digit19([$5 | T], Acc) ->
-    digit(T, [$5 | Acc], front);
-digit19([$6 | T], Acc) ->
-    digit(T, [$6 | Acc], front);
-digit19([$7 | T], Acc) ->
-    digit(T, [$7 | Acc], front);
-digit19([$8 | T], Acc) ->
-    digit(T, [$8 | Acc], front);
-digit19([$9 | T], Acc) ->
-    digit(T, [$9 | Acc], front);
-digit19(Else, Acc) ->
-    decimal(Else, Acc).
-
-%%--------------------------------------------------------------------
-%% @spec digit(Stream, Acc, Next) -> {Res, Rest}.
-%% 
-%% @doc 
-%%  Parse out the specified digit set.
-%% @end
-%%--------------------------------------------------------------------
-digit([$0 | T], Acc, Next) ->
-    digit(T, [$0 | Acc], Next);
-digit([$1 | T], Acc, Next) ->
-    digit(T, [$1 | Acc], Next);
-digit([$2 | T], Acc, Next) ->
-    digit(T, [$2 | Acc], Next);
-digit([$3 | T], Acc, Next) ->
-    digit(T, [$3 | Acc], Next);
-digit([$4 | T], Acc, Next) ->
-    digit(T, [$4 | Acc], Next);
-digit([$5 | T], Acc, Next) ->
-    digit(T, [$5 | Acc], Next);
-digit([$6 | T], Acc, Next) ->
-    digit(T, [$6 | Acc], Next);
-digit([$7 | T], Acc, Next) ->
-    digit(T, [$7 | Acc], Next);
-digit([$8 | T], Acc, Next) ->
-    digit(T, [$8 | Acc], Next);
-digit([$9 | T], Acc, Next) ->
-    digit(T, [$9 | Acc], Next);
-digit(Stream, Acc, Next) ->
-    digit_next(Stream, Acc, Next).
-
-decimal([$.| T], Acc) when length(T) > 0 ->
-    digit(T, [$. | Acc], decimal);
-decimal(Stream, Acc) ->
-    integer_end(Stream, Acc).
-
-exponent([$e, $+ | T], Acc) ->
-    digit(T, [$+, $e | Acc], exponent);
-exponent([$E, $+ | T], Acc) ->
-    digit(T, [$+, $E | Acc], exponent);
-exponent([$e, $- | T], Acc) ->
-    digit(T, [$-, $e | Acc], exponent);
-exponent([$E, $- | T], Acc) ->
-    digit(T, [$-, $E | Acc], exponent);
-exponent([$E | T], Acc) ->
-    digit(T, [$E | Acc], exponent);
-exponent([$e | T], Acc) ->
-    digit(T, [$e | Acc], exponent);
-exponent(Stream, Acc) ->
-    float_end(Stream, Acc).
-
-integer_end(Stream, Acc) ->
-    {list_to_integer(lists:reverse(Acc)), Stream}.
-
-
-float_end(Stream, Acc) ->
-    {list_to_float(lists:reverse(Acc)), Stream}.
-
-
-
-digit_next(Stream, Acc, front) ->
-    decimal(Stream, Acc);
-digit_next(Stream, Acc, decimal) ->
-    exponent(Stream, Acc);
-digit_next(Stream, Acc, exponent) ->
-    float_end(Stream, Acc).
 
 %%=============================================================================
 %% Unit tests
@@ -453,43 +270,6 @@ encode_object_test() ->
                                 {'Hello','Hel'}]))).
 
 
-
-number_test() ->
-    ?assertMatch({44, []}, value("44")),
-    ?assertMatch({-44, []}, value("-44")),
-    ?assertMatch({44.00, []}, value("44.00")),
-    ?assertMatch({-44.01, []}, value("-44.01")),
-    ?assertMatch({44.00e+33, []}, value("44.00e+33")),
-    ?assertMatch({44.00e33, []}, value("44.00e33")),
-    ?assertMatch({44.00e-10, []}, value("44.00e-10")),
-    ?assertMatch({42.44, []}, value("42.44")),
-    ?assertMatch({41.33, []}, value("41.33")),
-    ?assertMatch({0, []}, value("0")).
-
-
-string_test() ->
-    ?assertMatch({"Hello World", []},
-                 value("\"Hello World\"")),
-    ?assertMatch({"Hello\n World", []},
-                 value("\"Hello\n World\"")),
-    ?assertMatch({"Hello\" World", []},
-                 value("\"Hello\\\" World\"")),
-    ?assertMatch({"Hello\\ World", []},
-                 value("\"Hello\\ World\"")),
-    ?assertMatch({"Hello\/ World", []},
-                 value("\"Hello\/ World\"")),
-    ?assertMatch({"Hello\b World", []},
-                 value("\"Hello\b World\"")),
-    ?assertMatch({"Hello\f World", []},
-                 value("\"Hello\f World\"")),
-    ?assertMatch({"Hello\n World", []},
-                 value("\"Hello\n World\"")),
-    ?assertMatch({"Hello\r World", []},
-                 value("\"Hello\r World\"")),
-    ?assertMatch({"Hello\t World", []},
-                 value("\"Hello\t World\"")),
-    ?assertMatch({"Hello% World", []},
-                 value("\"Hello\\u0025 World\"")).
 
 boolean_test() ->
     ?assertMatch({true, []}, value("true")),
