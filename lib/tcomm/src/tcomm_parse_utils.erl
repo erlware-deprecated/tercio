@@ -6,7 +6,7 @@
 %%% @copyright (C) 2006
 %%% Created : 19 Dec 2006 by Eric Merritt 
 %%%-------------------------------------------------------------------
--module(trc_parse_utils).
+-module(tcomm_parse_utils).
 
 -include("eunit.hrl").
 

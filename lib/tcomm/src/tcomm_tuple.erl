@@ -6,7 +6,7 @@
 %%% @copyright (C) 2006
 %%% Created : 19 Dec 2006 by Eric Merritt 
 %%%-------------------------------------------------------------------
--module(trc_tuple).
+-module(tcomm_tuple).
 
 -include("eunit.hrl").
 
@@ -37,32 +37,32 @@ decode(Stream) ->
 %% Internal Functions
 %%=============================================================================
 value([$\" | T]) ->
-    trc_parse_utils:stringish_body($\", T, []);
+    tcomm_parse_utils:stringish_body($\", T, []);
 value([$\' | T]) ->
-    {String, Rest} = trc_parse_utils:stringish_body($\', T, []),
+    {String, Rest} = tcomm_parse_utils:stringish_body($\', T, []),
     {list_to_existing_atom(String), Rest};
 value([$- | T]) ->
-    trc_parse_utils:digit19(T, [$-]);
+    tcomm_parse_utils:digit19(T, [$-]);
 value([$0 | T]) ->
-    trc_parse_utils:digit(T, [$0], front); 
+    tcomm_parse_utils:digit(T, [$0], front); 
 value([$1 | T]) ->
-    trc_parse_utils:digit(T, [$1], front);
+    tcomm_parse_utils:digit(T, [$1], front);
 value([$2 | T]) ->
-    trc_parse_utils:digit(T, [$2], front);
+    tcomm_parse_utils:digit(T, [$2], front);
 value([$3 | T]) ->
-    trc_parse_utils:digit(T, [$3], front);
+    tcomm_parse_utils:digit(T, [$3], front);
 value([$4 | T]) ->
-    trc_parse_utils:digit(T, [$4], front);
+    tcomm_parse_utils:digit(T, [$4], front);
 value([$5 | T]) ->
-    trc_parse_utils:digit(T, [$5], front);
+    tcomm_parse_utils:digit(T, [$5], front);
 value([$6 | T]) ->
-    trc_parse_utils:digit(T, [$6], front);
+    tcomm_parse_utils:digit(T, [$6], front);
 value([$7 | T]) ->
-    trc_parse_utils:digit(T, [$7], front);
+    tcomm_parse_utils:digit(T, [$7], front);
 value([$8 | T]) ->
-    trc_parse_utils:digit(T, [$8], front);
+    tcomm_parse_utils:digit(T, [$8], front);
 value([$9 | T]) ->
-    trc_parse_utils:digit(T, [$9], front);
+    tcomm_parse_utils:digit(T, [$9], front);
 value([$[ | T]) ->
     list_body(T, []);
 value([${ | T]) ->
