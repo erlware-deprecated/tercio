@@ -10,14 +10,18 @@
 
 -behaviour(gen_server).
 
+-include("eunit.hrl").
+
 %% API
--export([start_link/0]).
+-export([start_link/0, get_value/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--record(state, {}).
+-define(SERVER, ?MODULE).
+
+-record(state, {config}).
 
 %%====================================================================
 %% API
@@ -31,6 +35,14 @@
 %%--------------------------------------------------------------------
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+
+
+
+get_value(Key) when is_list(Key) ->
+    gen_server:call(?SERVER, {get, tuplize(Key, [], [])});
+get_value({keypath, Key}) when is_tuple(Key) ->
+    gen_server:call(?SERVER, {get, Key}).
+
 
 %%====================================================================
 %% gen_server callbacks
@@ -47,7 +59,9 @@ start_link() ->
 %% @end 
 %%--------------------------------------------------------------------
 init([]) ->
-    {ok, #state{}}.
+    Root = server_root(),
+    Env = get_run_env(),
+    {ok, #state{config=parse_config(Root, Env)}}.
 
 %%--------------------------------------------------------------------
 %% @spec handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -61,9 +75,10 @@ init([]) ->
 %% Handling call messages
 %% @end 
 %%--------------------------------------------------------------------
+handle_call({get, Tuple}, _From, State = #state{config=Config}) ->
+    {reply, get_item(Tuple, Config), State};
 handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+    {reply, undefined, State}.
 
 %%--------------------------------------------------------------------
 %% @spec handle_cast(Msg, State) -> {noreply, State} |
@@ -115,3 +130,140 @@ code_change(_OldVsn, State, _Extra) ->
 %%====================================================================
 %%% Internal functions
 %%====================================================================
+
+%%--------------------------------------------------------------------
+%% @spec get_run_env() -> Environment.
+%% 
+%% @doc 
+%%  Get the runtime config environment.
+%% @end
+%%--------------------------------------------------------------------
+get_run_env() ->
+    case application:get_env(tercio, environment) of
+        undefined ->
+            "development";
+        {ok, Else} ->
+            Else
+    end.
+
+%%--------------------------------------------------------------------
+%% @spec server_root() -> Root.
+%% 
+%% @doc 
+%%  Get the server root from the system. Exit if the root isn't 
+%%  available.
+%% @end
+%%--------------------------------------------------------------------
+server_root() ->
+    case application:get_env(tercio, server_root) of
+        undefined ->
+            error_logger:error_msg("Unable to get server root from the "
+                                   "system. The server was not started "
+                                   "correctly. Exiting "),
+            exit({error, no_server_root});
+        {ok, Root} ->
+            Root
+    end.
+
+
+%%--------------------------------------------------------------------
+%% @spec parse_config(Root, Env) -> ParsedConfig.
+%% 
+%% @doc 
+%%  Read in the correct config file. Root specifies server root and 
+%%  env specifies the runtime environment.
+%% @end
+%%--------------------------------------------------------------------
+parse_config(Root, Env) ->
+    ConfigFile = filename:join([Root, "logs", strings:concat(Env, ".config")]),
+    case file:read_file(ConfigFile) of
+        {ok, FileBin} ->
+            parse_config(binary_to_list(FileBin));
+        {error, Reason} ->
+            error_logger:error_msg("Unable to read config file (~s). "
+                                   "received ~w", [ConfigFile, Reason]),
+            exit({error, unable_to_read_config})
+    end.
+
+
+%%--------------------------------------------------------------------
+%% @spec parse_config(Stream) -> ParsedConfig.
+%% 
+%% @doc 
+%%  Parse the config  file into a usable format.
+%% @end
+%%--------------------------------------------------------------------
+parse_config([$\s | T]) ->
+    parse_config(T);
+parse_config([$\t | T]) ->
+    parse_config(T);
+parse_config([$\n | T]) ->
+    parse_config(T);
+parse_config([$\r | T]) ->
+    parse_config(T);
+parse_config(All = [${ | _]) ->
+    tcnf_json:decode(All);
+parse_config(All) ->
+    tconf_json:decode([${ | All] ++ $}).
+
+
+tuplize([$. | T], TAcc, Acc) ->
+    tuplize(T, [], [lists:reverse(TAcc) | Acc]);
+tuplize([H | T], TAcc, Acc) ->
+    tuplize(T, [H | TAcc], Acc);
+tuplize([], [], Acc) ->
+    {keypath, lists:reverse(Acc)};
+tuplize([], TAcc, Acc) ->
+    {keypath, lists:reverse([lists:reverse(TAcc) | Acc])}.
+
+
+%%--------------------------------------------------------------------
+%% @spec get_item(Key, Config) -> Value.
+%% 
+%% @doc 
+%%  Get the item from the system identified by the key path.
+%% @end
+%%--------------------------------------------------------------------
+get_item(_Key, undefined) ->
+    undefined;
+get_item([H | T], Config) ->
+    get_item(T, get(H, Config));
+get_item([], Config) ->
+    Config.
+
+%%--------------------------------------------------------------------
+%% @spec get(Item, List) -> Value.
+%% 
+%% @doc 
+%%  Get the specified item from the prop list.
+%% @end
+%%--------------------------------------------------------------------
+get(Item, [{Item, Value} | _]) ->
+    Value;
+get(Item, [ _ | T]) ->
+    get(Item, T);
+get(_Item, []) ->
+    undefined.
+
+%%====================================================================
+%%% Tests
+%%====================================================================
+tuplize_test() ->
+    ?assertMatch({"Hello", "Hola"}, 
+                 tuplize("Hello.Hola", [], [])),
+    ?assertMatch({"One", "Two"},
+                 tuplize("One.Two.", [], [])).
+
+get_item_test() ->
+    ?assertMatch(99, get_item(["Hello", "Port"],
+                              [{"Boo", "Blah"},
+                               {"Hello", [{"Pah", 100}, 
+                                          {"Port", 99}]}])),
+    ?assertMatch([{"Hello", "Goodbuy"}],
+                 get_item(["Brody", "Brady", "Brah"],
+                          [{"Boo", 100},
+                           {"Brak", "Boo"},
+                           {"Brody", [{"pooky", "pah"},
+                                      {"Brady", [{"Brah", 
+                                                  [{"Hello", 
+                                                    "Goodbuy"}]}]}]}])).
