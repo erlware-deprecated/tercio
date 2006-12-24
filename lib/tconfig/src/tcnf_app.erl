@@ -13,7 +13,14 @@
 -behaviour(application).
 
 %% Application callbacks
--export([start/2, stop/1]).
+-export([start/2, stop/1, start/0]).
+
+%%====================================================================
+%% API
+%%====================================================================
+start() ->
+    application:start(sasl),
+    application:start(tconfig).
 
 %%====================================================================
 %% Application callbacks

@@ -37,7 +37,16 @@ start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 
-
+%%--------------------------------------------------------------------
+%% @spec get_value(Key) -> ok.
+%% 
+%% @doc 
+%%  get a value from the config. Configs consist of nested proplists
+%%  to access a deeply nested proplist you can either use a dotted
+%%  notation like "X.Y.Z" or a a tuple list like {keypath, ["X", 
+%%  "Y", "Z"]}
+%% @end
+%%--------------------------------------------------------------------
 get_value(Key) when is_list(Key) ->
     gen_server:call(?SERVER, {get, tuplize(Key, [], [])});
 get_value({keypath, Key}) when is_tuple(Key) ->
@@ -139,7 +148,7 @@ code_change(_OldVsn, State, _Extra) ->
 %% @end
 %%--------------------------------------------------------------------
 get_run_env() ->
-    case application:get_env(tercio, environment) of
+    case application:get_env(tconfig, environment) of
         undefined ->
             "development";
         {ok, Else} ->
@@ -155,7 +164,7 @@ get_run_env() ->
 %% @end
 %%--------------------------------------------------------------------
 server_root() ->
-    case application:get_env(tercio, server_root) of
+    case application:get_env(tconfig, server_root) of
         undefined ->
             error_logger:error_msg("Unable to get server root from the "
                                    "system. The server was not started "
@@ -175,7 +184,8 @@ server_root() ->
 %% @end
 %%--------------------------------------------------------------------
 parse_config(Root, Env) ->
-    ConfigFile = filename:join([Root, "logs", strings:concat(Env, ".config")]),
+    ConfigFile = filename:join([Root, "config", 
+                                string:concat(Env, ".config")]),
     case file:read_file(ConfigFile) of
         {ok, FileBin} ->
             parse_config(binary_to_list(FileBin));
@@ -202,19 +212,20 @@ parse_config([$\n | T]) ->
 parse_config([$\r | T]) ->
     parse_config(T);
 parse_config(All = [${ | _]) ->
-    tcnf_json:decode(All);
+    {Value, _} = tcomm_json:decode(All),
+    Value;
 parse_config(All) ->
-    tconf_json:decode([${ | All] ++ $}).
-
+    {Value, _} = tcomm_json:decode([${ | All] ++ [$}]),
+    Value.
 
 tuplize([$. | T], TAcc, Acc) ->
     tuplize(T, [], [lists:reverse(TAcc) | Acc]);
 tuplize([H | T], TAcc, Acc) ->
     tuplize(T, [H | TAcc], Acc);
 tuplize([], [], Acc) ->
-    {keypath, lists:reverse(Acc)};
+    lists:reverse(Acc);
 tuplize([], TAcc, Acc) ->
-    {keypath, lists:reverse([lists:reverse(TAcc) | Acc])}.
+    lists:reverse([lists:reverse(TAcc) | Acc]).
 
 
 %%--------------------------------------------------------------------
