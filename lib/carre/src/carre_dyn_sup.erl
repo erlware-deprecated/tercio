@@ -11,7 +11,7 @@
 
 %% API
 -export([start_link/0, 
-        new_server/2]).
+        new_server/1]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -48,14 +48,14 @@ init([]) ->
 
 
 %%--------------------------------------------------------------------
-%% @spec new_server(Port, CallBack) -> Pid.
+%% @spec new_server(Port) -> Pid.
 %% 
 %% @doc 
 %%  Start a new server (using the simple_one_for_one).
 %% @end
 %%--------------------------------------------------------------------
-new_server(Port, CallBack) ->
-    supervisor:start_child(?SERVER, [Port, CallBack]).
+new_server(Port) ->
+    supervisor:start_child(?SERVER, [Port]).
 
 %%====================================================================
 %% Internal functions

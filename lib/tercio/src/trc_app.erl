@@ -6,7 +6,7 @@
 %%% @copyright (C) 2006
 %%% Created : 18 Dec 2006 by Eric Merritt 
 %%%-------------------------------------------------------------------
--module(tercio_app).
+-module(trc_app).
 
 -behaviour(application).
 
@@ -29,8 +29,8 @@
 %% top supervisor of the tree.
 %% @end
 %%--------------------------------------------------------------------
-start(_Type, StartArgs) ->
-    case 'TopSupervisor':start_link(StartArgs) of
+start(_Type, _StartArgs) ->
+    case start_app() of
         {ok, Pid} -> 
             {ok, Pid};
         Error ->
@@ -52,3 +52,14 @@ stop(_State) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
+start_app() ->
+    start_server(),
+    trc_sup:start_link().
+
+start_server() ->
+    case tconfig:get_value("HttpServer.Type") of
+        "internal" ->
+            carre:start();
+        "Else" ->
+            ok
+    end.

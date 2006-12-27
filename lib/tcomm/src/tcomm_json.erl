@@ -8,7 +8,7 @@
 %%%-------------------------------------------------------------------
 -module(tcomm_json).
 
--include("eunit.hrl").
+%-include("eunit.hrl").
 
 -export([decode/1, encode/1]).
 
@@ -242,163 +242,163 @@ ident(Else, Acc) when length(Acc) > 0->
 %%=============================================================================
 %% Unit tests
 %%=============================================================================
-encode_string_test() ->
-    ?assertMatch("\"Hello\"", lists:flatten(encode({string, "Hello"}))),
-    ?assertMatch("\"hello\"", lists:flatten(encode('hello'))).
+%% encode_string_test() ->
+%%     ?assertMatch("\"Hello\"", lists:flatten(encode({string, "Hello"}))),
+%%     ?assertMatch("\"hello\"", lists:flatten(encode('hello'))).
 
-encode_number_test() ->
-    ?assertMatch("430", lists:flatten(encode(430))),
-    ?assertMatch("4303432", lists:flatten(encode(4303432))),
-    ?assertMatch("4.30000000000000000000e+01", lists:flatten(encode(43.00))),
-    ?assertMatch("3.22232219999999983884e+02", 
-                 lists:flatten(encode(322.23222))).
+%% encode_number_test() ->
+%%     ?assertMatch("430", lists:flatten(encode(430))),
+%%     ?assertMatch("4303432", lists:flatten(encode(4303432))),
+%%     ?assertMatch("4.30000000000000000000e+01", lists:flatten(encode(43.00))),
+%%     ?assertMatch("3.22232219999999983884e+02", 
+%%                  lists:flatten(encode(322.23222))).
 
-encode_array_test() ->
-    ?assertMatch("[33,43,53]", lists:flatten(encode([33, 43, 53]))),
-    ?assertMatch("[\"String\",34,\"song\"]", lists:flatten(encode([{string, 
-                                                                    "String"},
-                                                                   34, 
-                                                                   song]))),
-    ?assertMatch("[{\"Goodbye\":true,\"Hello\":44},43,54]",
-                 lists:flatten(encode([[{{string, "Hello"}, 44},
-                                        {{string, "Goodbye"}, true}],
-                                       43, 54]))).
+%% encode_array_test() ->
+%%     ?assertMatch("[33,43,53]", lists:flatten(encode([33, 43, 53]))),
+%%     ?assertMatch("[\"String\",34,\"song\"]", lists:flatten(encode([{string, 
+%%                                                                     "String"},
+%%                                                                    34, 
+%%                                                                    song]))),
+%%     ?assertMatch("[{\"Goodbye\":true,\"Hello\":44},43,54]",
+%%                  lists:flatten(encode([[{{string, "Hello"}, 44},
+%%                                         {{string, "Goodbye"}, true}],
+%%                                        43, 54]))).
 
-encode_object_test() ->
-    ?assertMatch("{\"Hello\":\"Hel\",\"Super\":421}",
-                 lists:flatten(encode([{{string, "Super"}, 421},
-                                {'Hello','Hel'}]))).
-
-
-
-boolean_test() ->
-    ?assertMatch({true, []}, value("true")),
-    ?assertMatch({false, []}, value("false")).
-
-null_test() ->
-    ?assertMatch({null, []}, value("null")).
-
-ident_test() ->
-    ?assertMatch({"Hello", []}, value("Hello")),
-    ?assertMatch({"boo88", []}, value("boo88")),
-    ?assertMatch({"bock", [$:]}, value("bock:")),
-    ?assertMatch({"bock", [${]}, value("bock{")),
-    ?assertMatch({"bock", [$[]}, value("bock[")).
+%% encode_object_test() ->
+%%     ?assertMatch("{\"Hello\":\"Hel\",\"Super\":421}",
+%%                  lists:flatten(encode([{{string, "Super"}, 421},
+%%                                 {'Hello','Hel'}]))).
 
 
-glossary_test() ->
-    ?assertMatch({[{"glossary",
-                   [{"GlossDiv",
-                     [{"GlossList",
-                       [{"GlossEntry",
-                         [{"GlossSee","markup"},
-                          {"GlossDef",
-                           [{"GlossSeeAlso",["GML","XML"]},
-                            {"para","A meta-mars DocBook."}]},
-                          {"Abbrev","ISO 8879:1986"},
-                          {"Acronym","SGML"},
-                          {"GlossTerm","Standareralized"},
-                          {"SortAs","SGML"},
-                          {"ID","SGML"}]}]},
-                      {"title","S"}]},
-                    {"title","example glossary"}]}],
-                  []},  
-                 value("{ "   
-                      "\"glossary\": { "
-                      "  \"title\": \"example glossary\","
-                      " \"GlossDiv\": {"
-                      "      \"title\": \"S\", "
-                      "  \"GlossList\": { "
-                      "          \"GlossEntry\": {"
-                      "              \"ID\": \"SGML\","
-                      "            \"SortAs\": \"SGML\","
-                      "            \"GlossTerm\": \"Standareralized\", "
-                      "            \"Acronym\": \"SGML\", "
-                      "            \"Abbrev\": \"ISO 8879:1986\","
-                      "            \"GlossDef\": { "
-                      "                  \"para\": \"A meta-mars DocBook.\", "
-                      "             \"GlossSeeAlso\": [\"GML\", \"XML\"]"
-                      "             },"
-                      "            \"GlossSee\": \"markup\" "
-                      "          }"
-                      "      }"
-                      "  }"
-                      "}}")).
 
-menu_test() ->
-    ?assertMatch({[{"menu",
-                    [{"popup",
-                      [{"menuitem",
-                        [[{"onclick","CreateNewDoc()"},
-                          {"value","New"}],
-                         [{"onclick","OpenDoc()"},
-                          {"value","Open"}],
-                         [{"onclick","CloseDoc()"},
-                          {"value","Close"}]]}]},
-                     {"value","File"},
-                     {"id","file"}]}],
-                  []},
-      value("{\"menu\": {"
-            "  \"id\": \"file\","
-            "  \"value\": \"File\","
-            "  \"popup\": {"
-            "      \"menuitem\": ["
-            "          {\"value\": \"New\", \"onclick\": \"CreateNewDoc()\"}, "
-            "          {\"value\": \"Open\", \"onclick\": \"OpenDoc()\"},"
-            "          {\"value\": \"Close\", \"onclick\": \"CloseDoc()\"} "
-            "                    ]"
-            "   }"
-            "}}")).
+%% boolean_test() ->
+%%     ?assertMatch({true, []}, value("true")),
+%%     ?assertMatch({false, []}, value("false")).
 
-widget_test() ->
-    ?assertMatch({[{"widget",
-                    [{"text",
-                      [{"onMouseUp","sun1.opacity = (sun1.opacity / 100) * 90;"},
-                       {"alignment","center"},
-                       {"vOffset",100},
-                       {"hOffset",250},
-                       {"name","text1"},
-                       {"style","bold"},
-                       {"size",36},
-      {"data","Click Here"}]},
-                     {"image",
-                      [{"alignment","center"},
-                       {"vOffset",250},
-                       {"hOffset",250},
-                       {"name","sun1"},
-                       {"src","Images/Sun.png"}]},
-                     {"window",
-                      [{"height",500},
-                       {"width",500},
-                       {"name","main_window"},
-                       {"title","Sample Konfabulator Widget"}]},
-                     {"debug","on"}]}],
-                  []},
+%% null_test() ->
+%%     ?assertMatch({null, []}, value("null")).
+
+%% ident_test() ->
+%%     ?assertMatch({"Hello", []}, value("Hello")),
+%%     ?assertMatch({"boo88", []}, value("boo88")),
+%%     ?assertMatch({"bock", [$:]}, value("bock:")),
+%%     ?assertMatch({"bock", [${]}, value("bock{")),
+%%     ?assertMatch({"bock", [$[]}, value("bock[")).
+
+
+%% glossary_test() ->
+%%     ?assertMatch({[{"glossary",
+%%                    [{"GlossDiv",
+%%                      [{"GlossList",
+%%                        [{"GlossEntry",
+%%                          [{"GlossSee","markup"},
+%%                           {"GlossDef",
+%%                            [{"GlossSeeAlso",["GML","XML"]},
+%%                             {"para","A meta-mars DocBook."}]},
+%%                           {"Abbrev","ISO 8879:1986"},
+%%                           {"Acronym","SGML"},
+%%                           {"GlossTerm","Standareralized"},
+%%                           {"SortAs","SGML"},
+%%                           {"ID","SGML"}]}]},
+%%                       {"title","S"}]},
+%%                     {"title","example glossary"}]}],
+%%                   []},  
+%%                  value("{ "   
+%%                       "\"glossary\": { "
+%%                       "  \"title\": \"example glossary\","
+%%                       " \"GlossDiv\": {"
+%%                       "      \"title\": \"S\", "
+%%                       "  \"GlossList\": { "
+%%                       "          \"GlossEntry\": {"
+%%                       "              \"ID\": \"SGML\","
+%%                       "            \"SortAs\": \"SGML\","
+%%                       "            \"GlossTerm\": \"Standareralized\", "
+%%                       "            \"Acronym\": \"SGML\", "
+%%                       "            \"Abbrev\": \"ISO 8879:1986\","
+%%                       "            \"GlossDef\": { "
+%%                       "                  \"para\": \"A meta-mars DocBook.\", "
+%%                       "             \"GlossSeeAlso\": [\"GML\", \"XML\"]"
+%%                       "             },"
+%%                       "            \"GlossSee\": \"markup\" "
+%%                       "          }"
+%%                       "      }"
+%%                       "  }"
+%%                       "}}")).
+
+%% menu_test() ->
+%%     ?assertMatch({[{"menu",
+%%                     [{"popup",
+%%                       [{"menuitem",
+%%                         [[{"onclick","CreateNewDoc()"},
+%%                           {"value","New"}],
+%%                          [{"onclick","OpenDoc()"},
+%%                           {"value","Open"}],
+%%                          [{"onclick","CloseDoc()"},
+%%                           {"value","Close"}]]}]},
+%%                      {"value","File"},
+%%                      {"id","file"}]}],
+%%                   []},
+%%       value("{\"menu\": {"
+%%             "  \"id\": \"file\","
+%%             "  \"value\": \"File\","
+%%             "  \"popup\": {"
+%%             "      \"menuitem\": ["
+%%             "          {\"value\": \"New\", \"onclick\": \"CreateNewDoc()\"}, "
+%%             "          {\"value\": \"Open\", \"onclick\": \"OpenDoc()\"},"
+%%             "          {\"value\": \"Close\", \"onclick\": \"CloseDoc()\"} "
+%%             "                    ]"
+%%             "   }"
+%%             "}}")).
+
+%% widget_test() ->
+%%     ?assertMatch({[{"widget",
+%%                     [{"text",
+%%                       [{"onMouseUp","sun1.opacity = (sun1.opacity / 100) * 90;"},
+%%                        {"alignment","center"},
+%%                        {"vOffset",100},
+%%                        {"hOffset",250},
+%%                        {"name","text1"},
+%%                        {"style","bold"},
+%%                        {"size",36},
+%%       {"data","Click Here"}]},
+%%                      {"image",
+%%                       [{"alignment","center"},
+%%                        {"vOffset",250},
+%%                        {"hOffset",250},
+%%                        {"name","sun1"},
+%%                        {"src","Images/Sun.png"}]},
+%%                      {"window",
+%%                       [{"height",500},
+%%                        {"width",500},
+%%                        {"name","main_window"},
+%%                        {"title","Sample Konfabulator Widget"}]},
+%%                      {"debug","on"}]}],
+%%                   []},
                  
-                 value("{\"widget\": {"
-                       "    debug: on,"
-                       "    window: {"
-                       "        title: \"Sample Konfabulator Widget\","
-                       "        name: \"main_window\","
-                       "        \"width\": 500,"
-                       "        \"height\": 500"
-                       "    },"
-                       "    \"image\": { "
-                       "        \"src\": \"Images/Sun.png\","
-                       "        \"name\": \"sun1\","
-                       "        \"hOffset\": 250,"
-                       "        \"vOffset\": 250,"
-                       "        \"alignment\": \"center\""
-                       "    },"
-                       "    \"text\": {"
-                       "        \"data\": \"Click Here\","
-                       "        \"size\": 36,"
-                       "        \"style\": \"bold\","
-                       "        \"name\": \"text1\","
-                       "        \"hOffset\": 250,"
-                       "        \"vOffset\": 100,"
-                       "        \"alignment\": \"center\","
-                       "        \"onMouseUp\": \"sun1.opacity = (sun1.opacity / 100) * 90;\""
-                       "    }"
-                       "}}")).  
+%%                  value("{\"widget\": {"
+%%                        "    debug: on,"
+%%                        "    window: {"
+%%                        "        title: \"Sample Konfabulator Widget\","
+%%                        "        name: \"main_window\","
+%%                        "        \"width\": 500,"
+%%                        "        \"height\": 500"
+%%                        "    },"
+%%                        "    \"image\": { "
+%%                        "        \"src\": \"Images/Sun.png\","
+%%                        "        \"name\": \"sun1\","
+%%                        "        \"hOffset\": 250,"
+%%                        "        \"vOffset\": 250,"
+%%                        "        \"alignment\": \"center\""
+%%                        "    },"
+%%                        "    \"text\": {"
+%%                        "        \"data\": \"Click Here\","
+%%                        "        \"size\": 36,"
+%%                        "        \"style\": \"bold\","
+%%                        "        \"name\": \"text1\","
+%%                        "        \"hOffset\": 250,"
+%%                        "        \"vOffset\": 100,"
+%%                        "        \"alignment\": \"center\","
+%%                        "        \"onMouseUp\": \"sun1.opacity = (sun1.opacity / 100) * 90;\""
+%%                        "    }"
+%%                        "}}")).  
 

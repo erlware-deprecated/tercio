@@ -10,7 +10,7 @@
 
 -behaviour(gen_server).
 
--include("eunit.hrl").
+%-include("eunit.hrl").
 
 %% API
 -export([start_link/0, get_value/1]).
@@ -188,7 +188,9 @@ parse_config(Root, Env) ->
                                 string:concat(Env, ".config")]),
     case file:read_file(ConfigFile) of
         {ok, FileBin} ->
-            parse_config(binary_to_list(FileBin));
+           [{"Environment", Env},  
+            {"ServerRoot", Root} | 
+            parse_config(binary_to_list(FileBin))];
         {error, Reason} ->
             error_logger:error_msg("Unable to read config file (~s). "
                                    "received ~w", [ConfigFile, Reason]),
@@ -259,22 +261,22 @@ get(_Item, []) ->
 %%====================================================================
 %%% Tests
 %%====================================================================
-tuplize_test() ->
-    ?assertMatch({"Hello", "Hola"}, 
-                 tuplize("Hello.Hola", [], [])),
-    ?assertMatch({"One", "Two"},
-                 tuplize("One.Two.", [], [])).
+%% tuplize_test() ->
+%%     ?assertMatch({"Hello", "Hola"}, 
+%%                  tuplize("Hello.Hola", [], [])),
+%%     ?assertMatch({"One", "Two"},
+%%                  tuplize("One.Two.", [], [])).
 
-get_item_test() ->
-    ?assertMatch(99, get_item(["Hello", "Port"],
-                              [{"Boo", "Blah"},
-                               {"Hello", [{"Pah", 100}, 
-                                          {"Port", 99}]}])),
-    ?assertMatch([{"Hello", "Goodbuy"}],
-                 get_item(["Brody", "Brady", "Brah"],
-                          [{"Boo", 100},
-                           {"Brak", "Boo"},
-                           {"Brody", [{"pooky", "pah"},
-                                      {"Brady", [{"Brah", 
-                                                  [{"Hello", 
-                                                    "Goodbuy"}]}]}]}])).
+%% get_item_test() ->
+%%     ?assertMatch(99, get_item(["Hello", "Port"],
+%%                               [{"Boo", "Blah"},
+%%                                {"Hello", [{"Pah", 100}, 
+%%                                           {"Port", 99}]}])),
+%%     ?assertMatch([{"Hello", "Goodbuy"}],
+%%                  get_item(["Brody", "Brady", "Brah"],
+%%                           [{"Boo", 100},
+%%                            {"Brak", "Boo"},
+%%                            {"Brody", [{"pooky", "pah"},
+%%                                       {"Brady", [{"Brah", 
+%%                                                   [{"Hello", 
+%%                                                     "Goodbuy"}]}]}]}])).

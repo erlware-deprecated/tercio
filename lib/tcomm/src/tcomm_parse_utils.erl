@@ -8,7 +8,7 @@
 %%%-------------------------------------------------------------------
 -module(tcomm_parse_utils).
 
--include("eunit.hrl").
+%-include("eunit.hrl").
 
 -export([stringish_body/3, digit/3, digit19/2]).
 
@@ -216,41 +216,41 @@ digit_next(Stream, Acc, exponent) ->
 %%=============================================================================
 %% Unit tests
 %%=============================================================================
-number_test() ->
-    ?assertMatch({44, []}, digit("44", [], front)),
-    ?assertMatch({-44, []}, digit("44", [$-], front)),
-    ?assertMatch({44.00, []}, digit("44.00", [], front)),
-    ?assertMatch({-44.01, []}, digit("44.01", [$-], front)),
-    ?assertMatch({44.00e+33, []}, digit("44.00e+33", [], front)),
-    ?assertMatch({44.00e33, []}, digit("44.00e33", [], front)),
-    ?assertMatch({44.00e-10, []}, digit("44.00e-10", [], front)),
-    ?assertMatch({42.44, []}, digit("42.44", [], front)),
-    ?assertMatch({41.33, []}, digit("41.33", [], front)),
-    ?assertMatch({0, []}, digit("0", [], front)).
+%% number_test() ->
+%%     ?assertMatch({44, []}, digit("44", [], front)),
+%%     ?assertMatch({-44, []}, digit("44", [$-], front)),
+%%     ?assertMatch({44.00, []}, digit("44.00", [], front)),
+%%     ?assertMatch({-44.01, []}, digit("44.01", [$-], front)),
+%%     ?assertMatch({44.00e+33, []}, digit("44.00e+33", [], front)),
+%%     ?assertMatch({44.00e33, []}, digit("44.00e33", [], front)),
+%%     ?assertMatch({44.00e-10, []}, digit("44.00e-10", [], front)),
+%%     ?assertMatch({42.44, []}, digit("42.44", [], front)),
+%%     ?assertMatch({41.33, []}, digit("41.33", [], front)),
+%%     ?assertMatch({0, []}, digit("0", [], front)).
 
 
-string_test() ->
-    ?assertMatch({"Hello World", []},
-                 stringish_body($\", "Hello World\"", [])),
-    ?assertMatch({"Hello\n World", []},
-                 stringish_body($\", "Hello\n World\"", [])),
-    ?assertMatch({"Hello\" World", []},
-                 stringish_body($\", "Hello\\\" World\"", [])),
-    ?assertMatch({"Hello\\ World", []},
-                 stringish_body($\", "Hello\\ World\"", [])),
-    ?assertMatch({"Hello\/ World", []},
-                 stringish_body($\", "Hello\/ World\"", [])),
-    ?assertMatch({"Hello\b World", []},
-                 stringish_body($\", "Hello\b World\"", [])),
-    ?assertMatch({"Hello\f World", []},
-                 stringish_body($\", "Hello\f World\"", [])),
-    ?assertMatch({"Hello\n World", []},
-                 stringish_body($\", "Hello\n World\"", [])),
-    ?assertMatch({"Hello\r World", []},
-                 stringish_body($\", "Hello\r World\"", [])),
-    ?assertMatch({"Hello\t World", []},
-                 stringish_body($\", "Hello\t World\"", [])),
-    ?assertMatch({"Hello% World", []},
-                 stringish_body($\", "Hello\\u0025 World\"", [])).
+%% string_test() ->
+%%     ?assertMatch({"Hello World", []},
+%%                  stringish_body($\", "Hello World\"", [])),
+%%     ?assertMatch({"Hello\n World", []},
+%%                  stringish_body($\", "Hello\n World\"", [])),
+%%     ?assertMatch({"Hello\" World", []},
+%%                  stringish_body($\", "Hello\\\" World\"", [])),
+%%     ?assertMatch({"Hello\\ World", []},
+%%                  stringish_body($\", "Hello\\ World\"", [])),
+%%     ?assertMatch({"Hello\/ World", []},
+%%                  stringish_body($\", "Hello\/ World\"", [])),
+%%     ?assertMatch({"Hello\b World", []},
+%%                  stringish_body($\", "Hello\b World\"", [])),
+%%     ?assertMatch({"Hello\f World", []},
+%%                  stringish_body($\", "Hello\f World\"", [])),
+%%     ?assertMatch({"Hello\n World", []},
+%%                  stringish_body($\", "Hello\n World\"", [])),
+%%     ?assertMatch({"Hello\r World", []},
+%%                  stringish_body($\", "Hello\r World\"", [])),
+%%     ?assertMatch({"Hello\t World", []},
+%%                  stringish_body($\", "Hello\t World\"", [])),
+%%     ?assertMatch({"Hello% World", []},
+%%                  stringish_body($\", "Hello\\u0025 World\"", [])).
 
 

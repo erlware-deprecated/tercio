@@ -23,15 +23,11 @@
 
 -include("carre.hrl").
 
--define(not_implemented_501, "HTTP/1.1 501 Not Implemented\r\n\r\n").
--define(forbidden_403, "HTTP/1.1 403 Forbidden\r\n\r\n").
--define(not_found_404, "HTTP/1.1 404 Not Found\r\n\r\n").
-
 -record(c,  {sock,
              port,
              peer_addr,
              peer_port,
-             callback}).
+             server_root}).
 
 -define(server_idle_timeout, 30*1000).
 
@@ -39,11 +35,11 @@
 %% API functions
 %%====================================================================
 
-start_link(ListenPid, ListenSocket, ListenPort, CallBack) ->
+start_link(ListenPid, ListenSocket, ListenPort, ServerRoot) ->
     proc_lib:spawn_link(?MODULE, init, [{ListenPid, ListenSocket, 
-                                         ListenPort, CallBack}]).
+                                         ListenPort, ServerRoot}]).
 
-init({Listen_pid, Listen_socket, ListenPort, CallBack}) ->
+init({Listen_pid, Listen_socket, ListenPort, ServerRoot}) ->
     case catch gen_tcp:accept(Listen_socket) of
 	{ok, Socket} ->
             %% Send the cast message to the listener process to 
@@ -54,7 +50,7 @@ init({Listen_pid, Listen_socket, ListenPort, CallBack}) ->
                    port = ListenPort,
                    peer_addr = Addr,
                    peer_port = Port,
-                   callback = CallBack},
+                   server_root=ServerRoot},
 	    request(C, #req{}); %% Jump to state 'request'
 	Else ->
 	    error_logger:error_report([{application, carre},
@@ -150,15 +146,16 @@ body(#c{sock = Sock} = C, Req) ->
             exit(normal)
     end.
 
-handle_get(C = #c{callback = CallBack}, Req = #req{connection = Conn}) ->
+handle_get(C = #c{server_root=ServerRoot}, Req = #req{connection = Conn}) ->
     case Req#req.uri of
         {abs_path, Path} ->
             {NPath, Args} = split_at_q_mark(Path, []),
-            CallBack(Req#req{uri=NPath, args=Args}),
+            carre_handler:do_get(Req#req{uri=NPath, args=Args}, 
+                              ServerRoot),
             Conn;
         {absoluteURI,http,_Host,_, Path} ->
             {NPath, Args} = split_at_q_mark(Path, []),
-            CallBack(Req#req{uri=NPath, args=Args}),
+            carre_handler:do_get(Req#req{uri=NPath, args=Args}),
             Conn;
         {absoluteURI,_Other_method,_Host,_,_Path} ->
             send(C, ?not_implemented_501),
@@ -171,13 +168,13 @@ handle_get(C = #c{callback = CallBack}, Req = #req{connection = Conn}) ->
             close
     end.
 
-handle_post(C = #c{callback = CallBack}, Req = #req{connection = Conn}) ->
+handle_post(C = #c{server_root=ServerRoot}, Req = #req{connection = Conn}) ->
     case Req#req.uri of
         {abs_path, _Path} ->
-            CallBack(Req),
+            carre_handler:do_post(Req, ServerRoot),
             Conn;
         {absoluteURI, http, _Host, _Port, _Path} ->
-            CallBack(Req),
+            carre_handler:do_post(Req, ServerRoot),
             Conn;
         {absoluteURI, _Other_method, _Host, _Port, _Path} ->
             send(C, ?not_implemented_501),

@@ -9,7 +9,7 @@
 
 -behaviour(gen_server).
 
--export([start_link/2, 
+-export([start_link/1, 
          create/2]).
 
 %% gen_server callbacks
@@ -19,7 +19,7 @@
 -record(state, {listen_socket,
                 port,
                 acceptor,
-                callback}).
+                server_root}).
 
 
 %%====================================================================
@@ -32,9 +32,9 @@
 %% Starts the server
 %% @end 
 %%--------------------------------------------------------------------
-start_link(Port, Callback) when is_integer(Port) ->
+start_link(Port) when is_integer(Port) ->
     Name = list_to_atom(lists:flatten(io_lib:format("carre_~w",[Port]))),
-    gen_server:start_link({local, Name}, ?MODULE, [Port, Callback], []).
+    gen_server:start_link({local, Name}, ?MODULE, [Port], []).
 
 %%--------------------------------------------------------------------
 %% @spec create(ServerPid, Pid) -> ok.
@@ -60,8 +60,11 @@ create(ServerPid, Pid) ->
 %%  listening socket.
 %% @end 
 %%--------------------------------------------------------------------
-init([Port, CallBack]) ->
+init([Port]) ->
     process_flag(trap_exit, true),
+    
+    ServerRoot = tconfig:get_value("ServerRoot"),
+
     case gen_tcp:listen(Port,[binary,{packet,0},
                               {reuseaddr,true},
                               {active, false},
@@ -72,11 +75,11 @@ init([Port, CallBack]) ->
 	{ok, Listen_socket} ->
             %%Create first accepting process
 	    Pid = carre_socket:start_link(self(), Listen_socket, 
-                                           Port, CallBack),
+                                           Port, ServerRoot),
 	    {ok, #state{listen_socket = Listen_socket,
                         port = Port,
 			acceptor = Pid,
-                        callback = CallBack}};
+                       server_root=ServerRoot}};
 	{error, Reason} ->
 	    {stop, Reason}
     end.
@@ -108,11 +111,12 @@ handle_call(_Request, _From, State) ->
 %% create/2 is received
 %% @end 
 %%--------------------------------------------------------------------
-handle_cast({create,_Pid},#state{listen_socket = Listen_socket,
-                                 port = Port,
-                                callback = CallBack} = State) ->
+handle_cast({create,_Pid}, State = #state{listen_socket = Listen_socket,
+                                          port = Port,
+                                          server_root=ServerRoot}) ->
     New_pid = carre_socket:start_link(self(), Listen_socket, 
-                                       Port, CallBack),
+                                      Port,
+                                      ServerRoot),
     {noreply, State#state{acceptor=New_pid}};
 
 handle_cast(_Msg, State) ->
@@ -131,14 +135,14 @@ handle_info({'EXIT', Pid, normal}, #state{acceptor=Pid} = State) ->
 %% The current acceptor has died, wait a little and try again
 %% @end 
 %%--------------------------------------------------------------------
-handle_info({'EXIT', Pid, _Abnormal}, #state{listen_socket = ListenSocket,
-                                             acceptor = Pid, 
-                                             port = Port,
-                                             callback = CallBack} = State) ->
+handle_info({'EXIT', Pid, _Abnormal}, State = #state{
+                                        listen_socket = ListenSocket,
+                                        acceptor = Pid, 
+                                        port = Port,
+                                        server_root = ServerRoot}) ->
     timer:sleep(2000),
     carre_socket:start_link(self(), ListenSocket, 
-                             Port, 
-                             CallBack),
+                            Port, ServerRoot),
     {noreply,State};
 
 handle_info(_Info, State) ->

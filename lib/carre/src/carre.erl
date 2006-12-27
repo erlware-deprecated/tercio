@@ -13,7 +13,7 @@
 
 %% API
 -export([start_link/0,
-        start_server/2]).
+        start_server/1]).
 
 %% gen_server callbacks
 -export([init/1, 
@@ -46,8 +46,8 @@ start_link() ->
 %%  specified callback as a handler.
 %% @end
 %%--------------------------------------------------------------------
-start_server(Port, CallBack) ->
-    gen_server:cast(?SERVER, {newserver, Port, CallBack}).
+start_server(Port) ->
+    gen_server:cast(?SERVER, {newserver, Port}).
 
 %%====================================================================
 %% gen_server callbacks
@@ -82,8 +82,8 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}.
 %% @doc Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast({newserver, Port, CallBack}, State) ->
-    carre_dyn_sup:new_server(Port, CallBack),
+handle_cast({newserver, Port}, State) ->
+    carre_dyn_sup:new_server(Port),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
