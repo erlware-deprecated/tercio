@@ -59,7 +59,7 @@ start_app() ->
 start_server() ->
     case tconfig:get_value("HttpServer.Type") of
         "internal" ->
-            carre:start();
+            carre:start_server(tconfig:get_value("HttpServer.Port"));
         "Else" ->
             ok
     end.

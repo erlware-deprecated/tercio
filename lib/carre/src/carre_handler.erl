@@ -29,8 +29,14 @@ do_get(Req = #req{uri=Uri}, ServerRoot) ->
         problems ->
             carre_client:respond(Req, "403 Forbidden", "");
         ok ->
-            AFile = filename:join([ServerRoot | RFile]),
-            process_file(Req, AFile)
+            case RFile of
+                ["/" | Rest] ->
+                    AFile = filename:join([ServerRoot | Rest]),
+                    process_file(Req, AFile);
+                _Other ->
+                    AFile = filename:join([ServerRoot | RFile]),
+                    process_file(Req, AFile)
+            end
     end.
 
 do_post(#req{}, _ServerRoot) ->
@@ -40,7 +46,7 @@ do_post(#req{}, _ServerRoot) ->
 %% Internal functions
 %%====================================================================
 process_file(Req, File) ->
-    case string:substring(filename:extension(File), 2) of
+    case string:substr(filename:extension(File), 2) of
         "html" ->
             process_file(Req, "text/html", File);
         "htm" ->

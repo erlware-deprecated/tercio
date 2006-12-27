@@ -75,7 +75,9 @@ init([Port]) ->
 	{ok, Listen_socket} ->
             %%Create first accepting process
 	    Pid = carre_socket:start_link(self(), Listen_socket, 
-                                           Port, ServerRoot),
+                                           Port, 
+                                          filename:join([ServerRoot, 
+                                                         "public"])),
 	    {ok, #state{listen_socket = Listen_socket,
                         port = Port,
 			acceptor = Pid,

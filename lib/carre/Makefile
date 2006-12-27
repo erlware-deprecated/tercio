@@ -9,7 +9,7 @@
 ERLC 	:= erlc
 GEN 	:= beam
 
-EFLAGS := -pa ebin
+EFLAGS := -pa ebin +debug_info
 
 INCLUDE := include
 EBIN 	:= ebin

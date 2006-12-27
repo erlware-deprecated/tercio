@@ -6,7 +6,7 @@
 %%% @copyright (C) 2006
 %%% Created : 18 Dec 2006 by Eric Merritt 
 %%%-------------------------------------------------------------------
--module(tercio_sup).
+-module(trc_sup).
 
 -behaviour(supervisor).
 
@@ -47,9 +47,9 @@ start_link() ->
 %% @end
 %%--------------------------------------------------------------------
 init([]) ->
-    AChild = {'AName',{'AModule',start_link,[]},
-              permanent,2000,worker,['AModule']},
-    {ok,{{one_for_all,0,1}, [AChild]}}.
+%    AChild = {'AName',{'AModule',start_link,[]},
+%              permanent,2000,worker,['AModule']},
+    {ok,{{one_for_all,0,1}, []}}.
 
 %%====================================================================
 %% Internal functions
