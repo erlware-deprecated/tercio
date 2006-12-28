@@ -17,9 +17,9 @@
 %%%-------------------------------------------------------------------
 -module(carre_socket).
 
--export([start_link/4]).
+-export([start_link/5]).
 
--export([init/1]).
+-export([init/5]).
 
 -include("carre.hrl").
 
@@ -27,19 +27,36 @@
              port,
              peer_addr,
              peer_port,
-             server_root}).
+             server_root,
+             session}).
 
 -define(server_idle_timeout, 30*1000).
 
 %%====================================================================
 %% API functions
 %%====================================================================
+%%--------------------------------------------------------------------
+%% @spec start_link(ListenPid, ListenSocket, ListenPort, 
+%%                  ServerRoot, Session) -> ok.
+%%
+%% 
+%% @doc 
+%%  Start the socket server listening process. 
+%% @end
+%%--------------------------------------------------------------------
+start_link(ListenPid, ListenSocket, ListenPort, ServerRoot, Session) ->
+    proc_lib:spawn_link(?MODULE, init, [ListenPid, ListenSocket, 
+                                         ListenPort, ServerRoot, Session]).
 
-start_link(ListenPid, ListenSocket, ListenPort, ServerRoot) ->
-    proc_lib:spawn_link(?MODULE, init, [{ListenPid, ListenSocket, 
-                                         ListenPort, ServerRoot}]).
-
-init({Listen_pid, Listen_socket, ListenPort, ServerRoot}) ->
+%%--------------------------------------------------------------------
+%% @spec init(Listen_pid, Listen_socket, ListenPort, 
+%%   ServerRoot, Session) -> ok.
+%% 
+%% @doc 
+%%   Initiate the listening process.
+%% @end
+%%--------------------------------------------------------------------
+init(Listen_pid, Listen_socket, ListenPort, ServerRoot, Session) ->
     case catch gen_tcp:accept(Listen_socket) of
 	{ok, Socket} ->
             %% Send the cast message to the listener process to 
@@ -50,7 +67,8 @@ init({Listen_pid, Listen_socket, ListenPort, ServerRoot}) ->
                    port = ListenPort,
                    peer_addr = Addr,
                    peer_port = Port,
-                   server_root=ServerRoot},
+                   server_root=ServerRoot,
+                   session=Session},
 	    request(C, #req{}); %% Jump to state 'request'
 	Else ->
 	    error_logger:error_report([{application, carre},
@@ -146,16 +164,19 @@ body(#c{sock = Sock} = C, Req) ->
             exit(normal)
     end.
 
-handle_get(C = #c{server_root=ServerRoot}, Req = #req{connection = Conn}) ->
+handle_get(C = #c{server_root=ServerRoot,
+                  session=Session}, Req = #req{connection = Conn}) ->
     case Req#req.uri of
         {abs_path, Path} ->
             {NPath, Args} = split_at_q_mark(Path, []),
             carre_handler:do_get(Req#req{uri=NPath, args=Args}, 
-                              ServerRoot),
+                                 ServerRoot, 
+                                 Session),
             Conn;
         {absoluteURI,http,_Host,_, Path} ->
             {NPath, Args} = split_at_q_mark(Path, []),
-            carre_handler:do_get(Req#req{uri=NPath, args=Args}),
+            carre_handler:do_get(Req#req{uri=NPath, args=Args}, ServerRoot,
+                                 session),
             Conn;
         {absoluteURI,_Other_method,_Host,_,_Path} ->
             send(C, ?not_implemented_501),
@@ -168,13 +189,21 @@ handle_get(C = #c{server_root=ServerRoot}, Req = #req{connection = Conn}) ->
             close
     end.
 
-handle_post(C = #c{server_root=ServerRoot}, Req = #req{connection = Conn}) ->
+%%--------------------------------------------------------------------
+%% @spec handle_post(C, Req) -> ok.
+%% 
+%% @doc 
+%%  Parse post requests from the system.
+%% @end
+%%--------------------------------------------------------------------
+handle_post(C = #c{server_root=ServerRoot,
+                   session=Session}, Req = #req{connection = Conn}) ->
     case Req#req.uri of
         {abs_path, _Path} ->
-            carre_handler:do_post(Req, ServerRoot),
+            carre_handler:do_post(Req, ServerRoot, Session),
             Conn;
         {absoluteURI, http, _Host, _Port, _Path} ->
-            carre_handler:do_post(Req, ServerRoot),
+            carre_handler:do_post(Req, ServerRoot, Session),
             Conn;
         {absoluteURI, _Other_method, _Host, _Port, _Path} ->
             send(C, ?not_implemented_501),

@@ -47,9 +47,9 @@ start_link() ->
 %% @end
 %%--------------------------------------------------------------------
 init([]) ->
-%    AChild = {'AName',{'AModule',start_link,[]},
-%              permanent,2000,worker,['AModule']},
-    {ok,{{one_for_all,0,1}, []}}.
+    Tercio = {tercio,{tercio,start_link,[]},
+              permanent,2000,worker,[tercio]},
+    {ok,{{one_for_all,0,1}, [Tercio]}}.
 
 %%====================================================================
 %% Internal functions

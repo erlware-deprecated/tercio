@@ -13,14 +13,15 @@
 
 -behaviour(gen_server).
 
+-define(SERVER, ?MODULE).
+
 %% API
--export([start_link/0, register/2, unregister/1, message/2]).
+-export([start_link/0, register/2, unregister/1, call/3, call/4, cast/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3]).
 
--record(state, {}).
 
 %%====================================================================
 %% API
@@ -40,10 +41,17 @@ register(Name, Pid) ->
     gen_server:cast(?SERVER, {register, Name, Pid}).
 
 unregister(Name) ->
-    gen_server:cast(?SERVER, {unregister, Name, Pid}).
+    gen_server:cast(?SERVER, {unregister, Name}).
 
-message(Name, MessageString) ->
-    gen_server:cast(?SERVER, {message, Name, MessageString}).
+call(Name, Id, MessageString) ->
+    gen_server:call(?SERVER, {message, Name, Id, MessageString}).
+
+call(Name, Id, MessageString, Timeout) ->
+    gen_server:call(?SERVER, {message, Name, Id, MessageString, Timeout}, 
+                    Timeout).
+
+cast(Name, Id, MessageString) ->
+    gen_server:cast(?SERVER, {message, Name, Id, MessageString}).
 
 %%====================================================================
 %% gen_server callbacks
@@ -60,7 +68,7 @@ message(Name, MessageString) ->
 %% @end 
 %%--------------------------------------------------------------------
 init([]) ->
-    {ok, #state{}}.
+    {ok, []}.
 
 %%--------------------------------------------------------------------
 %% @spec handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -74,6 +82,12 @@ init([]) ->
 %% Handling call messages
 %% @end 
 %%--------------------------------------------------------------------
+handle_call({message, Name, Id, MessageString}, _From, State) ->
+    Reply = send_call(Name, Id, MessageString, State, none),
+    {reply, Reply, State};
+handle_call({message, Name, Id, MessageString, Timeout}, _From, State) ->
+    Reply = send_call(Name, Id, MessageString, State, Timeout),
+    {reply, Reply, State};
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -87,6 +101,15 @@ handle_call(_Request, _From, State) ->
 %% Handling cast messages
 %% @end 
 %%--------------------------------------------------------------------
+handle_cast({register, Name, Pid}, State) ->
+    register_internal(Name, Pid, State, []),
+    {noreply, State};
+handle_cast({unregister, Name}, State) ->
+    unregister_internal(Name, State, []),
+    {noreply, State};
+handle_cast({message, Name, Id, MessageString}, State) ->
+    send_cast(Name, Id, MessageString, State),
+    {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -99,6 +122,8 @@ handle_cast(_Msg, State) ->
 %% Handling all non call/cast messages
 %% @end 
 %%--------------------------------------------------------------------
+handle_info({'EXIT', Pid, noproc}, State) ->
+    unregister_pid_internal(Pid, State, []);
 handle_info(_Info, State) ->
     {noreply, State}.
 
@@ -128,3 +153,59 @@ code_change(_OldVsn, State, _Extra) ->
 %%====================================================================
 %%% Internal functions
 %%====================================================================
+register_internal(Name, Pid, [{Name, _} | T], Acc) ->
+    [{Name, Pid} | Acc] ++ T;
+register_internal(Name, Pid, [H | T], Acc) ->
+    register_internal(Name, Pid, T, [H | Acc]);
+register_internal(Name, Pid, [], Acc) ->
+    [{Name, Pid} | Acc].
+
+
+unregister_internal(Name, [{Name, _} | T], Acc) ->
+    Acc ++ T;
+unregister_internal(Name, [H | T], Acc) ->
+    unregister_internal(Name, T, [ H | Acc ]);
+unregister_internal(_Name, [], Acc) ->
+    Acc.
+
+
+unregister_pid_internal(Pid, [{_ , Pid} | T], Acc) ->
+    Acc ++ T;
+unregister_pid_internal(Pid, [H | T], Acc) ->
+    unregister_pid_internal(Pid, T, [ H | Acc ]);
+unregister_pid_internal(_Pid, [], Acc) ->
+    Acc.
+
+
+send_call(Name, Id, MessageString, State, Timeout) ->
+    Message = tcomm_tuple:decode(MessageString),
+    Result = case get_pid(Name, State) of
+                 undefined ->
+                     {error, {string, string:concat("No Server named ",
+                                                    Name)}};
+                 Pid ->
+                     case Timeout of
+                         none ->
+                             gen_server:call(Pid, {tercio_msg, Id, Message});
+                         _ ->
+                             gen_server:call(Pid, {tercio_msg, 
+                                                   Id, Message}, Timeout)
+                     end
+             end,
+    tcomm_json:encode(Result).
+
+send_cast(Name, Id, MessageString, State) ->
+    Message = tcomm_tuple:decode(MessageString),
+    case get_pid(Name, State) of
+        undefined ->
+            ok;
+        Pid ->
+            gen_server:cast(Pid, {tercio_msg, Id, Message})
+    end.
+
+get_pid(Name, [{Name, Pid} | _]) -> 
+    Pid;
+get_pid(Name, [ _ | T ]) ->
+    get_pid(Name, T);
+get_pid(_Name, []) ->
+    undefined.

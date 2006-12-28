@@ -19,7 +19,8 @@
 -record(state, {listen_socket,
                 port,
                 acceptor,
-                server_root}).
+                server_root,
+                session}).
 
 
 %%====================================================================
@@ -64,6 +65,7 @@ init([Port]) ->
     process_flag(trap_exit, true),
     
     ServerRoot = tconfig:get_value("ServerRoot"),
+    Session = tconfig:get_value("Session.Duration"),
 
     case gen_tcp:listen(Port,[binary,{packet,0},
                               {reuseaddr,true},
@@ -81,7 +83,8 @@ init([Port]) ->
 	    {ok, #state{listen_socket = Listen_socket,
                         port = Port,
 			acceptor = Pid,
-                       server_root=ServerRoot}};
+                        server_root=ServerRoot,
+                        session=Session}};
 	{error, Reason} ->
 	    {stop, Reason}
     end.
@@ -115,10 +118,12 @@ handle_call(_Request, _From, State) ->
 %%--------------------------------------------------------------------
 handle_cast({create,_Pid}, State = #state{listen_socket = Listen_socket,
                                           port = Port,
-                                          server_root=ServerRoot}) ->
+                                          server_root=ServerRoot,
+                                          session=Session}) ->
     New_pid = carre_socket:start_link(self(), Listen_socket, 
                                       Port,
-                                      ServerRoot),
+                                      ServerRoot,
+                                      Session),
     {noreply, State#state{acceptor=New_pid}};
 
 handle_cast(_Msg, State) ->
@@ -141,10 +146,11 @@ handle_info({'EXIT', Pid, _Abnormal}, State = #state{
                                         listen_socket = ListenSocket,
                                         acceptor = Pid, 
                                         port = Port,
-                                        server_root = ServerRoot}) ->
+                                        server_root = ServerRoot,
+                                        session=Session}) ->
     timer:sleep(2000),
     carre_socket:start_link(self(), ListenSocket, 
-                            Port, ServerRoot),
+                            Port, ServerRoot, Session),
     {noreply,State};
 
 handle_info(_Info, State) ->
