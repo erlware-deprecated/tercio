@@ -76,16 +76,20 @@ handle_post(["/", "call", Name], #req{body=Body}, Id) ->
     Values = carre_post:parse(Body),
     Timeout = get_value("timeout", Values),
     Message = get_value("message", Values),
+    Pid = tercio:worker(),
     case Timeout of
         undefined ->
-            tercio:call(Name, Id, Message);
+            tercio:call(Pid, Name, Id, Message);
         Else ->
-            tercio:call(Name, Id, Message, list_to_integer(Else))
-    end;
+            tercio:call(Pid, Name, Id, Message, list_to_integer(Else))
+    end,
+    tercio:close(Pid);
 handle_post(["/", "cast", Name], #req{body=Body}, Id) ->
     Values = carre_post:parse(Body),
     Message = get_value("message", Values),
-    tercio:cast(Name, Id, Message),
+    Pid = tercio:worker(),
+    tercio:cast(Pid, Name, Id, Message),
+    tercio:close(Pid)
     "ok".
 
 %%--------------------------------------------------------------------

@@ -1,23 +1,18 @@
 %%%-------------------------------------------------------------------
 %%% @author Eric Merritt 
 %%% @doc 
-%%%   The server acts as the bridge between incoming messages and 
-%%%   thier associated registered services. It takes tuple encoded
-%%%   message information, parses into matchable messages that it then
-%%%   forwards on to those services that have registered interest in them.
 %%% @end
 %%% @copyright (C) 2006
 %%% Created : 26 Dec 2006 
 %%%-------------------------------------------------------------------
--module(tercio).
+-module(trc_worker).
 
 -behaviour(gen_server).
 
 -define(SERVER, ?MODULE).
 
 %% API
--export([start_link/0, register/2, unregister/1, worker/0, 
-         call/4, call/5, cast/4]).
+-export([start_link/0]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -34,29 +29,8 @@
 %% Starts the server
 %% @end 
 %%--------------------------------------------------------------------
-start_link() ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
-
-
-register(Name, Pid) ->
-    gen_server:cast(?SERVER, {register, Name, Pid}).
-
-unregister(Name) ->
-    gen_server:cast(?SERVER, {unregister, Name}).
-
-worker() ->
-    gen_server:call(?SERVER, worker).
-
-call(Pid, Name, Id, MessageString) ->
-    gen_server:call(Pid, {message, Name, Id, MessageString}).
-
-call(Pid, Name, Id, MessageString, Timeout) ->
-    gen_server:call(Pid, {message, Name, Id, MessageString, Timeout}, 
-                    Timeout).
-
-cast(Pid, Id, MessageString) ->
-    gen_server:cast(Pid, {message, Name, Id, MessageString}).
-
+start_link(State) ->
+    gen_server:start_link(?MODULE, [State], []).
 
 
 %%====================================================================
@@ -73,8 +47,8 @@ cast(Pid, Id, MessageString) ->
 %% Initiates the server
 %% @end 
 %%--------------------------------------------------------------------
-init([]) ->
-    {ok, []}.
+init(State) ->
+    {ok, State}.
 
 %%--------------------------------------------------------------------
 %% @spec handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -88,22 +62,9 @@ init([]) ->
 %% Handling call messages
 %% @end 
 %%--------------------------------------------------------------------
-handle_call({message, Name, Id, MessageString}, _From, State) ->
-    Reply = send_call(Name, Id, MessageString, State, none),
-    {reply, Reply, State};
 handle_call({message, Name, Id, MessageString, Timeout}, _From, State) ->
     Reply = send_call(Name, Id, MessageString, State, Timeout),
     {reply, Reply, State};
-handle_call(worker, _From, State) ->
-    Res = case trc_worker_sup:start_child(State) of
-              {ok,Child} ->
-                  Child;
-              {ok, Child, _Info} ->
-                  Child;
-              Error ->
-                  Error
-          end
-    {reply, Res, State};
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -117,12 +78,6 @@ handle_call(_Request, _From, State) ->
 %% Handling cast messages
 %% @end 
 %%--------------------------------------------------------------------
-handle_cast({register, Name, Pid}, State) ->
-    register_internal(Name, Pid, State, []),
-    {noreply, State};
-handle_cast({unregister, Name}, State) ->
-    unregister_internal(Name, State, []),
-    {noreply, State};
 handle_cast({message, Name, Id, MessageString}, State) ->
     send_cast(Name, Id, MessageString, State),
     {noreply, State};
@@ -138,8 +93,6 @@ handle_cast(_Msg, State) ->
 %% Handling all non call/cast messages
 %% @end 
 %%--------------------------------------------------------------------
-handle_info({'EXIT', Pid, noproc}, State) ->
-    unregister_pid_internal(Pid, State, []);
 handle_info(_Info, State) ->
     {noreply, State}.
 
@@ -169,30 +122,6 @@ code_change(_OldVsn, State, _Extra) ->
 %%====================================================================
 %%% Internal functions
 %%====================================================================
-register_internal(Name, Pid, [{Name, _} | T], Acc) ->
-    [{Name, Pid} | Acc] ++ T;
-register_internal(Name, Pid, [H | T], Acc) ->
-    register_internal(Name, Pid, T, [H | Acc]);
-register_internal(Name, Pid, [], Acc) ->
-    [{Name, Pid} | Acc].
-
-
-unregister_internal(Name, [{Name, _} | T], Acc) ->
-    Acc ++ T;
-unregister_internal(Name, [H | T], Acc) ->
-    unregister_internal(Name, T, [ H | Acc ]);
-unregister_internal(_Name, [], Acc) ->
-    Acc.
-
-
-unregister_pid_internal(Pid, [{_ , Pid} | T], Acc) ->
-    Acc ++ T;
-unregister_pid_internal(Pid, [H | T], Acc) ->
-    unregister_pid_internal(Pid, T, [ H | Acc ]);
-unregister_pid_internal(_Pid, [], Acc) ->
-    Acc.
-
-
 send_call(Name, Id, MessageString, State, Timeout) ->
     Message = tcomm_tuple:decode(MessageString),
     Result = case get_pid(Name, State) of
