@@ -32,7 +32,7 @@
 
 %% API
 -export([start_link/0, register/2, unregister/1, worker/0, 
-         call/4, call/5, cast/4]).
+         call/3, call/5, cast/4]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -69,7 +69,7 @@ call(Pid, Name, Id, MessageString, Timeout) ->
     gen_server:call(Pid, {message, Name, Id, MessageString, Timeout}, 
                     Timeout).
 
-cast(Pid, Id, MessageString) ->
+cast(Pid, Name, Id, MessageString) ->
     gen_server:cast(Pid, {message, Name, Id, MessageString}).
 
 
@@ -117,7 +117,7 @@ handle_call(worker, _From, State) ->
                   Child;
               Error ->
                   Error
-          end
+          end,
     {reply, Res, State};
 handle_call(_Request, _From, State) ->
     Reply = ok,
