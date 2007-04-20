@@ -104,7 +104,7 @@ handle_post(["/", "cast", Name], #req{body=Body}, Id) ->
     Message = get_value("message", Values),
     Pid = tercio:worker(),
     tercio:cast(Pid, Name, Id, Message),
-    tercio:close(Pid)
+    tercio:close(Pid),
     "ok".
 
 %%--------------------------------------------------------------------

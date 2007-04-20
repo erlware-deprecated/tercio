@@ -32,7 +32,7 @@
 
 %% API
 -export([start_link/0, register/2, unregister/1, worker/0, 
-         call/3, call/5, cast/4]).
+         call/4, call/5, cast/4]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,

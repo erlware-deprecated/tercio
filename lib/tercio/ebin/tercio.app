@@ -8,5 +8,5 @@
              trc_worker_sup]},
   
   {registered, [tercio]},
-  {applications, [kernel, stdlib, sasl, tconfig]},
+  {applications, [kernel, stdlib, sasl]},
   {mod, {trc_app, []}}]}.

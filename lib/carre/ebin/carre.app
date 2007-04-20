@@ -7,8 +7,9 @@
              carre_socket,
              carre_client,
              carre,
-             carre_handler]},
-  
+             carre_handler,
+             carre_post,
+             carre_dyn_sup]},
   {registered, [carre_sup, carre]},
   {applications, [kernel, stdlib]},
   {mod, {carre_app, []}}]}.
