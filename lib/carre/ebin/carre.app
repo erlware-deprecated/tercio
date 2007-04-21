@@ -9,7 +9,9 @@
              carre,
              carre_handler,
              carre_post,
-             carre_dyn_sup]},
+             carre_dyn_sup,
+             carre_utils,
+             carre_dispatcher]},
   {registered, [carre_sup, carre]},
-  {applications, [kernel, stdlib]},
+  {applications, [kernel, stdlib, sasl]},
   {mod, {carre_app, []}}]}.

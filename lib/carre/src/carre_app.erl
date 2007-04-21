@@ -16,7 +16,7 @@
 %%%---------------------------------------------------------------------------
 %%% @author Eric Merritt <cyberlync@gmail.com>
 %%% @doc 
-%%% 
+%%%  Simple application behaviour
 %%% @end
 %%% @copyright (C) 2006
 %%% Created : 21 Dec 2006 by Eric Merritt
@@ -48,10 +48,8 @@
 start(_Type, _StartArgs) ->
     case carre_sup:start_link() of
 	{ok, Pid} -> 
-	    alarm_handler:clear_alarm({application_stopped, carre}),
 	    {ok, Pid};
 	Error ->
-	    alarm_handler:set_alarm({{application_stopped, carre},[]}),
 	    Error
     end.
 
@@ -66,7 +64,6 @@ start(_Type, _StartArgs) ->
 %% @end 
 %%--------------------------------------------------------------------
 stop(_State) ->
-    alarm_handler:set_alarm({{application_stopped, carre},[]}),
     ok.
 
 %%====================================================================

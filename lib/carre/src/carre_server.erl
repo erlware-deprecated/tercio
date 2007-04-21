@@ -24,7 +24,7 @@
 
 -behaviour(gen_server).
 
--export([start_link/1, 
+-export([start_link/3, 
          create/2]).
 
 %% gen_server callbacks
@@ -34,7 +34,7 @@
 -record(state, {listen_socket,
                 port,
                 acceptor,
-                server_root,
+                handlers,
                 session}).
 
 
@@ -48,9 +48,8 @@
 %% Starts the server
 %% @end 
 %%--------------------------------------------------------------------
-start_link(Port) when is_integer(Port) ->
-    Name = list_to_atom(lists:flatten(io_lib:format("carre_~w",[Port]))),
-    gen_server:start_link({local, Name}, ?MODULE, [Port], []).
+start_link(Port, Session, Handlers) when is_integer(Port) ->
+    gen_server:start_link(?MODULE, [Port, Session, Handlers], []).
 
 %%--------------------------------------------------------------------
 %% @spec create(ServerPid, Pid) -> ok.
@@ -76,12 +75,9 @@ create(ServerPid, Pid) ->
 %%  listening socket.
 %% @end 
 %%--------------------------------------------------------------------
-init([Port]) ->
+init([Port, Session, Handlers]) ->
     process_flag(trap_exit, true),
     
-    ServerRoot = tconfig:get_value("ServerRoot"),
-    Session = tconfig:get_value("Session.Duration"),
-
     case gen_tcp:listen(Port,[binary,{packet,0},
                               {reuseaddr,true},
                               {active, false},
@@ -92,13 +88,13 @@ init([Port]) ->
 	{ok, Listen_socket} ->
             %%Create first accepting process
 	    Pid = carre_socket:start_link(self(), Listen_socket, 
-                                           Port, 
-                                          filename:join([ServerRoot, 
-                                                         "public"])),
+                                          Port, 
+                                          Handlers,
+                                          Session),
 	    {ok, #state{listen_socket = Listen_socket,
                         port = Port,
 			acceptor = Pid,
-                        server_root=ServerRoot,
+                        handlers=Handlers,
                         session=Session}};
 	{error, Reason} ->
 	    {stop, Reason}
@@ -133,11 +129,11 @@ handle_call(_Request, _From, State) ->
 %%--------------------------------------------------------------------
 handle_cast({create,_Pid}, State = #state{listen_socket = Listen_socket,
                                           port = Port,
-                                          server_root=ServerRoot,
+                                          handlers = Handlers,
                                           session=Session}) ->
     New_pid = carre_socket:start_link(self(), Listen_socket, 
                                       Port,
-                                      ServerRoot,
+                                      Handlers,
                                       Session),
     {noreply, State#state{acceptor=New_pid}};
 
@@ -161,11 +157,11 @@ handle_info({'EXIT', Pid, _Abnormal}, State = #state{
                                         listen_socket = ListenSocket,
                                         acceptor = Pid, 
                                         port = Port,
-                                        server_root = ServerRoot,
+                                        handlers = Handlers,
                                         session=Session}) ->
     timer:sleep(2000),
     carre_socket:start_link(self(), ListenSocket, 
-                            Port, ServerRoot, Session),
+                            Port, Handlers, Session),
     {noreply,State};
 
 handle_info(_Info, State) ->

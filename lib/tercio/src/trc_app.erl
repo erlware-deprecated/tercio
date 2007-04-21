@@ -45,7 +45,7 @@
 %% @end
 %%--------------------------------------------------------------------
 start(_Type, _StartArgs) ->
-    case start_app() of
+    case trc_sup:start_link() of
         {ok, Pid} -> 
             {ok, Pid};
         Error ->
@@ -67,14 +67,7 @@ stop(_State) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
-start_app() ->
-    start_server(),
-    trc_sup:start_link().
 
-start_server() ->
-    case tconfig:get_value("HttpServer.Type") of
-        "internal" ->
-            carre:start_server(tconfig:get_value("HttpServer.Port"));
-        "Else" ->
-            ok
-    end.
+
+
+

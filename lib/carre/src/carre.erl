@@ -28,7 +28,10 @@
 
 %% API
 -export([start_link/0,
-        start_server/1]).
+         start_server/1,
+         start_server/2,
+         register_handler/1,
+         unregister_handler/1]).
 
 %% gen_server callbacks
 -export([init/1, 
@@ -38,7 +41,9 @@
          terminate/2, 
          code_change/3]).
 
--record(state, {}).
+-define(DEFAULT_SESSION, 30 * 60 * 1000).
+
+-record(state, {handlers}).
 
 %%====================================================================
 %% API
@@ -52,17 +57,44 @@
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
+%%--------------------------------------------------------------------
+%% @doc 
+%%  Register a new handler for this system.
+%% @spec register_handler(Handler) -> ok.
+%% @end
+%%--------------------------------------------------------------------
+register_handler(Handler) ->
+    gen_server:cast(?SERVER, {register_handler, Handler}).
 
 %%--------------------------------------------------------------------
-%% @spec start_server(Port::integer(), Callback::function()) -> ok.
+%% @doc 
+%%  unregister the handler
+%% @spec unregister_handler(Handler) -> ok.
+%% @end
+%%--------------------------------------------------------------------
+unregister_handler(Handler) ->
+    gen_server:cast(?SERVER, {unregister_handler, Handler}).
+
+
+%%--------------------------------------------------------------------
+%% @spec start_server(Port::integer()) -> ok.
 %%
 %% @doc
-%%  Starts a specific server on the specified port, using the 
-%%  specified callback as a handler.
+%%  Starts a specific server on the specified port
 %% @end
 %%--------------------------------------------------------------------
 start_server(Port) ->
-    gen_server:cast(?SERVER, {newserver, Port}).
+    gen_server:cast(?SERVER, {newserver, Port, ?DEFAULT_SESSION}).
+
+%%--------------------------------------------------------------------
+%% @spec start_server(Port::integer(), Session::integer()) -> ok.
+%%
+%% @doc
+%%  Starts a specific server on the specified port
+%% @end
+%%--------------------------------------------------------------------
+start_server(Port, Session) ->
+    gen_server:cast(?SERVER, {newserver, Port, Session}).
 
 %%====================================================================
 %% gen_server callbacks
@@ -76,7 +108,7 @@ start_server(Port) ->
 %% @doc Initiates the server
 %%--------------------------------------------------------------------
 init([]) ->
-    {ok, #state{}}.
+    {ok, #state{handlers=[]}}.
 
 %%--------------------------------------------------------------------
 %% @spec handle_call(Request, From, State) -> {reply, Reply, State} |
@@ -97,9 +129,13 @@ handle_call(_Request, _From, State) ->
 %%                                      {stop, Reason, State}.
 %% @doc Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast({newserver, Port}, State) ->
-    carre_dyn_sup:new_server(Port),
-    {noreply, State}.
+handle_cast({newserver, Port, Session}, State = #state{handlers=Handlers}) ->
+    carre_dyn_sup:new_server(Port, Session, Handlers),
+    {noreply, State};
+handle_cast({register_handler, Handler}, #state{handlers=Handlers}) ->
+    {noreply, #state{handlers=[Handler | Handlers]}};
+handle_cast({unregister_handler, Handler}, #state{handlers=Handlers}) ->
+    {noreply, #state{handlers=strip_handler(Handler, Handlers, [])}}.
 
 %%--------------------------------------------------------------------
 %% @spec handle_info(Info, State) -> {noreply, State} |
@@ -129,3 +165,18 @@ terminate(_Reason, _State) ->
 %%--------------------------------------------------------------------
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
+
+%%====================================================================
+%% Internal Functions
+%%====================================================================
+%%--------------------------------------------------------------------
+%% @spec strip_handler(Handler, List, Acc) -> NewList.
+%% 
+%% @doc strip the handler from the handler list.
+%%--------------------------------------------------------------------
+strip_handler(Handler, [Handler | T], Acc) ->
+    Acc ++ T;
+strip_handler(Handler, [H | T], Acc) ->
+    strip_handler(Handler, T, [H | Acc]);
+strip_handler(_Handler, [], Acc) ->
+    Acc.

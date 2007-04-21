@@ -42,7 +42,7 @@
              port,
              peer_addr,
              peer_port,
-             server_root,
+             handlers,
              session}).
 
 -define(server_idle_timeout, 30*1000).
@@ -52,26 +52,27 @@
 %%====================================================================
 %%--------------------------------------------------------------------
 %% @spec start_link(ListenPid, ListenSocket, ListenPort, 
-%%                  ServerRoot, Session) -> ok.
+%%                  Handlers, Session) -> ok.
 %%
 %% 
 %% @doc 
 %%  Start the socket server listening process. 
 %% @end
 %%--------------------------------------------------------------------
-start_link(ListenPid, ListenSocket, ListenPort, ServerRoot, Session) ->
+start_link(ListenPid, ListenSocket, ListenPort, 
+           Handlers, Session) ->
     proc_lib:spawn_link(?MODULE, init, [ListenPid, ListenSocket, 
-                                         ListenPort, ServerRoot, Session]).
+                                        ListenPort, Handlers, Session]).
 
 %%--------------------------------------------------------------------
 %% @spec init(Listen_pid, Listen_socket, ListenPort, 
-%%   ServerRoot, Session) -> ok.
+%%   Handlers, Session) -> ok.
 %% 
 %% @doc 
 %%   Initiate the listening process.
 %% @end
 %%--------------------------------------------------------------------
-init(Listen_pid, Listen_socket, ListenPort, ServerRoot, Session) ->
+init(Listen_pid, Listen_socket, ListenPort, Handlers, Session) ->
     case catch gen_tcp:accept(Listen_socket) of
 	{ok, Socket} ->
             %% Send the cast message to the listener process to 
@@ -82,7 +83,7 @@ init(Listen_pid, Listen_socket, ListenPort, ServerRoot, Session) ->
                    port = ListenPort,
                    peer_addr = Addr,
                    peer_port = Port,
-                   server_root=ServerRoot,
+                   handlers=Handlers,
                    session=Session},
 	    request(C, #req{}); %% Jump to state 'request'
 	Else ->
@@ -179,19 +180,19 @@ body(#c{sock = Sock} = C, Req) ->
             exit(normal)
     end.
 
-handle_get(C = #c{server_root=ServerRoot,
+handle_get(C = #c{handlers=Handlers,
                   session=Session}, Req = #req{connection = Conn}) ->
     case Req#req.uri of
         {abs_path, Path} ->
             {NPath, Args} = split_at_q_mark(Path, []),
-            carre_handler:do_get(Req#req{uri=NPath, args=Args}, 
-                                 ServerRoot, 
+            carre_dispatcher:do_get(Req#req{uri=NPath, args=Args}, 
+                                 Handlers, 
                                  Session),
             Conn;
         {absoluteURI,http,_Host,_, Path} ->
             {NPath, Args} = split_at_q_mark(Path, []),
-            carre_handler:do_get(Req#req{uri=NPath, args=Args}, ServerRoot,
-                                 session),
+            carre_dispatcher:do_get(Req#req{uri=NPath, args=Args}, Handlers,
+                                 Session),
             Conn;
         {absoluteURI,_Other_method,_Host,_,_Path} ->
             send(C, ?not_implemented_501),
@@ -211,14 +212,14 @@ handle_get(C = #c{server_root=ServerRoot,
 %%  Parse post requests from the system.
 %% @end
 %%--------------------------------------------------------------------
-handle_post(C = #c{server_root=ServerRoot,
+handle_post(C = #c{handlers=Handlers,
                    session=Session}, Req = #req{connection = Conn}) ->
     case Req#req.uri of
         {abs_path, _Path} ->
-            carre_handler:do_post(Req, ServerRoot, Session),
+            carre_dispatcher:do_post(Req, Handlers, Session),
             Conn;
         {absoluteURI, http, _Host, _Port, _Path} ->
-            carre_handler:do_post(Req, ServerRoot, Session),
+            carre_dispatcher:do_post(Req, Handlers, Session),
             Conn;
         {absoluteURI, _Other_method, _Host, _Port, _Path} ->
             send(C, ?not_implemented_501),
