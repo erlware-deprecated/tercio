@@ -5,8 +5,9 @@
              trc_app, 
              trc_sup,
              trc_worker,
-             trc_worker_sup]},
+             trc_worker_sup,
+             trc_carre_handler]},
   
   {registered, [tercio]},
-  {applications, [kernel, stdlib, sasl]},
+  {applications, [kernel, stdlib, sasl, carre]},
   {mod, {trc_app, []}}]}.

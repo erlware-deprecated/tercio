@@ -114,7 +114,7 @@ do_post(Req = #req{uri=Uri}, _Handlers, Session) ->
 %%--------------------------------------------------------------------
 dispatch([Handler | T], Uri, Req, Id) ->
     try 
-        Handler:dispatch(Uri, Req, Id) 
+        Handler:handle(Uri, Req, Id) 
     catch
         error:function_clause ->
             dispatch(T, Uri, Req, Id)
