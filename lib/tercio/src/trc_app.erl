@@ -47,7 +47,7 @@
 start(_Type, _StartArgs) ->
     case trc_sup:start_link() of
         {ok, Pid} -> 
-            trc_test:start_link(),
+            trc_carre_handler:setup(),
             {ok, Pid};
         Error ->
             Error

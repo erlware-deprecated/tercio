@@ -64,7 +64,9 @@ start_link() ->
 init([]) ->
     Tercio = {tercio,{tercio,start_link,[]},
               permanent,2000,worker,[tercio]},
-    {ok,{{one_for_all,0,1}, [Tercio]}}.
+    TercioTest = {trc_test, {trc_test, start_link, []},
+              permanent,2000,worker,[trc_test]},
+    {ok,{{one_for_one,0,1}, [Tercio, TercioTest]}}.
 
 %%====================================================================
 %% Internal functions
