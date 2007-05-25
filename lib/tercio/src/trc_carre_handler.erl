@@ -24,7 +24,7 @@
 %% @todo Cache the file, don't read from disc every time
 %% @end
 %%--------------------------------------------------------------------
-handle(["/", "tercio", Name], Req, Id) ->
+handle(["/", "tercio", Name], _Req, _Id) ->
     Dir = code:priv_dir(tercio),
     TargetFile = filename:join([Dir, Name]),
     carre_utils:process_file(TargetFile).
